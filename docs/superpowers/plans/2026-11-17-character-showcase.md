@@ -57,6 +57,7 @@ node_modules/
 dist/
 qa/
 .vercel/
+.superpowers/
 *.log
 ```
 
@@ -67,6 +68,7 @@ qa/
 /qa
 /node_modules
 /.vercel
+/.superpowers
 /.git
 ```
 

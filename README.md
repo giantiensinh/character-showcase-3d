@@ -127,10 +127,14 @@ Mặc định script tìm Chromium tại `C:/Users/<user>/AppData/Local/ms-playw
 
 ## Deploy
 
-Repo đã cấu hình sẵn cho Vercel ([`vercel.json`](vercel.json)):
+Repo đã nối với Vercel qua GitHub: **mỗi lần push lên `main` là tự động build và deploy production**. Pull request nhận preview deployment riêng.
+
+Cấu hình nằm ở [`vercel.json`](vercel.json):
 
 - Build `npm run build`, output `dist/`.
 - `/models/*` và `/assets/*` được gắn `Cache-Control: public, max-age=31536000, immutable` — an toàn vì filename/asset được version hoá bằng `?v=`.
+
+Vẫn có thể deploy thủ công khi cần:
 
 ```bash
 npx vercel deploy --prod --project character-showcase

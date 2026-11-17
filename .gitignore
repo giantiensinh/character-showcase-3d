@@ -6,3 +6,4 @@ cow_girl_3d_model.glb
 .vercel/
 .superpowers/
 *.log
+.env*.local

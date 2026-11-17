@@ -2,8 +2,34 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import type { CharacterDef } from './config';
+import { ShowcaseEffects } from './effects';
 
 const ACCENT = 0xd9a05b;
+
+function createBackdropTexture(): THREE.CanvasTexture {
+  const size = 1024;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const context = canvas.getContext('2d');
+  if (context) {
+    context.fillStyle = '#1c2026';
+    context.fillRect(0, 0, size, size);
+    context.save();
+    context.translate(size * 0.5, size * 0.38);
+    context.scale(1, 0.65 / 0.9);
+    const gradient = context.createRadialGradient(0, 0, 0, 0, 0, size * 0.9);
+    gradient.addColorStop(0, '#292f35');
+    gradient.addColorStop(0.55, '#21262c');
+    gradient.addColorStop(1, '#1c2026');
+    context.fillStyle = gradient;
+    context.fillRect(-size * 2, -size * 2, size * 4, size * 4);
+    context.restore();
+  }
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
+}
 
 function prefersCoarsePointer(): boolean {
   return window.matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0;
@@ -33,6 +59,7 @@ export class ShowcaseScene {
 
   private readonly keyLight: THREE.DirectionalLight;
   private readonly stage = new THREE.Group();
+  private readonly effects: ShowcaseEffects;
   private readonly isMobile = prefersCoarsePointer();
   private fitDistance = 3;
   private frameBox: THREE.Box3 | null = null;
@@ -44,7 +71,7 @@ export class ShowcaseScene {
     this.renderer = new THREE.WebGLRenderer({
       canvas,
       alpha: true,
-      antialias: !this.isMobile,
+      antialias: false,
       powerPreference: 'high-performance',
     });
     this.renderer.setClearColor(0x000000, 0);
@@ -56,6 +83,11 @@ export class ShowcaseScene {
 
     this.camera = new THREE.PerspectiveCamera(35, 1, 0.1, 100);
     this.camera.position.set(0, 1.5, 4);
+
+    this.effects = new ShowcaseEffects(this.renderer, this.scene, this.camera, this.isMobile);
+    const backdrop = createBackdropTexture();
+    (window as unknown as Record<string, unknown>).__bg = backdrop.image;
+    this.scene.background = backdrop;
 
     this.controls = new OrbitControls(this.camera, canvas);
     this.controls.enableDamping = true;
@@ -142,7 +174,7 @@ export class ShowcaseScene {
     const tick = () => {
       this.rafId = requestAnimationFrame(tick);
       this.controls.update();
-      this.renderer.render(this.scene, this.camera);
+      this.effects.render();
     };
     this.rafId = requestAnimationFrame(tick);
   }
@@ -151,8 +183,10 @@ export class ShowcaseScene {
     const width = this.canvas.clientWidth;
     const height = this.canvas.clientHeight;
     if (!width || !height) return;
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+    this.renderer.setPixelRatio(pixelRatio);
     this.renderer.setSize(width, height, false);
+    this.effects.setSize(width, height, pixelRatio);
     this.camera.aspect = width / height;
     this.camera.updateProjectionMatrix();
   }

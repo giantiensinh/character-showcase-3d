@@ -6,6 +6,7 @@ import sharp from 'sharp';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
 const OUT = path.join(ROOT, 'qa');
+const PREFIX = process.env.QA_BASE ? 'live-' : '';
 const CHROME =
   process.env.CHROME_PATH ||
   'C:/Users/Giantiensinh/AppData/Local/ms-playwright/chromium-1248/chrome-win64/chrome.exe';
@@ -56,41 +57,127 @@ async function coverage(file) {
   return bright / total;
 }
 
-const server = SPAWN_SERVER ? await startPreview() : null;
-await mkdir(OUT, { recursive: true });
-const browser = await chromium.launch({ executablePath: CHROME, headless: true });
-
-try {
-  const errors = [];
-  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+async function openPage(browser, options) {
+  const context = await browser.newContext(options);
   const page = await context.newPage();
+  const errors = [];
   page.on('console', (message) => {
     if (message.type() === 'error') errors.push(message.text());
   });
   page.on('pageerror', (error) => errors.push(String(error)));
-
-  const started = Date.now();
   await page.goto(BASE, { waitUntil: 'load' });
   await page.waitForFunction(
     () => document.querySelector('#app')?.dataset.ready === 'true',
     null,
     { timeout: 90000 },
   );
-  const loadMs = Date.now() - started;
+  return { context, page, errors };
+}
+
+async function desktopRun(browser) {
+  const { context, page, errors } = await openPage(browser, {
+    viewport: { width: 1440, height: 900 },
+  });
   await page.waitForTimeout(900);
 
-  const file = path.join(OUT, 'desktop-anime.png');
-  await page.screenshot({ path: file });
-  const pixelCoverage = await coverage(file);
+  const animeFile = path.join(OUT, `${PREFIX}desktop-anime.png`);
+  await page.screenshot({ path: animeFile });
+  check('desktop anime rendered', (await coverage(animeFile)) > 0.02);
+
+  const rotateBefore = await page.getAttribute('#btn-rotate', 'aria-pressed');
+  await page.click('#btn-rotate');
+  const rotateAfter = await page.getAttribute('#btn-rotate', 'aria-pressed');
+  check('auto-rotate toggles', rotateBefore === 'true' && rotateAfter === 'false', `${rotateBefore} -> ${rotateAfter}`);
+
+  await page.click('#btn-reset');
+  await page.click('button[data-character="cow"]');
+  await page.waitForFunction(
+    () => {
+      const app = document.querySelector('#app');
+      return app?.dataset.character === 'cow' && app?.dataset.ready === 'true';
+    },
+    null,
+    { timeout: 90000 },
+  );
+  await page.waitForTimeout(900);
+
+  const cowFile = path.join(OUT, `${PREFIX}desktop-cow.png`);
+  await page.screenshot({ path: cowFile });
+  check('desktop cow rendered', (await coverage(cowFile)) > 0.02);
+  check(
+    'switcher marks active character',
+    (await page.getAttribute('button[data-character="cow"]', 'aria-pressed')) === 'true',
+  );
+
   const triangles = await page.evaluate(() =>
     Number(document.querySelector('#app')?.dataset.triangles ?? 0),
   );
-
-  check('desktop canvas rendered', pixelCoverage > 0.02, `coverage ${(pixelCoverage * 100).toFixed(1)}%`);
-  check('desktop triangles in range', triangles > 100000 && triangles <= 600000, `${triangles}`);
+  check('cow triangles in range', triangles > 100000 && triangles <= 600000, `${triangles}`);
   check('desktop console clean', errors.length === 0, errors.slice(0, 3).join(' | '));
-  console.log(`INFO desktop load ${loadMs} ms`);
   await context.close();
+}
+
+async function mobileRun(browser) {
+  const { context, page, errors } = await openPage(browser, {
+    viewport: { width: 390, height: 844 },
+    deviceScaleFactor: 2,
+    isMobile: true,
+    hasTouch: true,
+  });
+  await page.waitForTimeout(900);
+
+  const animeFile = path.join(OUT, `${PREFIX}mobile-anime.png`);
+  await page.screenshot({ path: animeFile });
+  check('mobile anime rendered', (await coverage(animeFile)) > 0.02);
+
+  const overflow = await page.evaluate(
+    () => document.scrollingElement.scrollWidth - window.innerWidth,
+  );
+  check('mobile no horizontal overflow', overflow <= 1, `${overflow}px`);
+
+  await page.tap('button[data-character="cow"]');
+  await page.waitForFunction(
+    () => {
+      const app = document.querySelector('#app');
+      return app?.dataset.character === 'cow' && app?.dataset.ready === 'true';
+    },
+    null,
+    { timeout: 90000 },
+  );
+  await page.waitForTimeout(900);
+
+  const cowFile = path.join(OUT, `${PREFIX}mobile-cow.png`);
+  await page.screenshot({ path: cowFile });
+  check('mobile cow rendered', (await coverage(cowFile)) > 0.02);
+  check(
+    'mobile auto-rotate defaults off',
+    (await page.getAttribute('#btn-rotate', 'aria-pressed')) === 'false',
+  );
+  check('mobile console clean', errors.length === 0, errors.slice(0, 3).join(' | '));
+  await context.close();
+}
+
+async function reducedMotionRun(browser) {
+  const { context, page, errors } = await openPage(browser, {
+    viewport: { width: 1280, height: 800 },
+    reducedMotion: 'reduce',
+  });
+  check(
+    'reduced motion disables auto-rotate',
+    (await page.getAttribute('#btn-rotate', 'aria-pressed')) === 'false',
+  );
+  check('reduced motion console clean', errors.length === 0, errors.slice(0, 3).join(' | '));
+  await context.close();
+}
+
+const server = SPAWN_SERVER ? await startPreview() : null;
+await mkdir(OUT, { recursive: true });
+const browser = await chromium.launch({ executablePath: CHROME, headless: true });
+
+try {
+  await desktopRun(browser);
+  await mobileRun(browser);
+  await reducedMotionRun(browser);
 } finally {
   await browser.close();
   stopPreview(server);

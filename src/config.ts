@@ -15,7 +15,7 @@ export const CHARACTERS: CharacterDef[] = [
   {
     id: 'anime',
     name: 'Anime Girl',
-    file: `${import.meta.env.BASE_URL}models/anime-girl.glb`,
+    file: `${import.meta.env.BASE_URL}models/anime-girl.glb?v=1`,
     index: '01',
     exposure: 1.05,
     envIntensity: 0.35,
@@ -25,7 +25,7 @@ export const CHARACTERS: CharacterDef[] = [
   {
     id: 'cow',
     name: 'Cow Girl',
-    file: `${import.meta.env.BASE_URL}models/cow-girl.glb`,
+    file: `${import.meta.env.BASE_URL}models/cow-girl.glb?v=1`,
     index: '02',
     exposure: 0.95,
     envIntensity: 0.35,

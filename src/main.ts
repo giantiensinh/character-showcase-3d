@@ -103,9 +103,20 @@ async function bootstrap(app: HTMLElement, canvas: HTMLCanvasElement): Promise<v
   }
 
   async function toggleFullscreen(target: HTMLElement): Promise<void> {
+    const doc = document as Document & {
+      webkitFullscreenElement?: Element | null;
+      webkitExitFullscreen?: () => Promise<void> | void;
+    };
+    const node = target as HTMLElement & { webkitRequestFullscreen?: () => Promise<void> | void };
     try {
-      if (document.fullscreenElement) await document.exitFullscreen();
-      else await target.requestFullscreen();
+      if (document.fullscreenElement ?? doc.webkitFullscreenElement) {
+        if (document.exitFullscreen) await document.exitFullscreen();
+        else await doc.webkitExitFullscreen?.();
+      } else if (target.requestFullscreen) {
+        await target.requestFullscreen();
+      } else {
+        await node.webkitRequestFullscreen?.();
+      }
     } catch (error) {
       console.error(error);
     }
@@ -130,7 +141,7 @@ async function bootstrap(app: HTMLElement, canvas: HTMLCanvasElement): Promise<v
 
   const other = CHARACTERS.find((character) => character.id !== CHARACTERS[0].id);
   const connection = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
-  if (other && !connection?.saveData) {
+  if (other && !coarsePointer && !connection?.saveData) {
     const prefetch = () => {
       void fetch(other.file).catch(() => undefined);
     };

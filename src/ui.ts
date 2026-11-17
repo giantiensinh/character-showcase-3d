@@ -36,7 +36,8 @@ export class ShowcaseUI {
     el<HTMLButtonElement>('#btn-reset').addEventListener('click', handlers.onReset);
 
     const fullscreenBtn = el<HTMLButtonElement>('#btn-fullscreen');
-    if (!document.fullscreenEnabled) fullscreenBtn.hidden = true;
+    const prefixed = document as Document & { webkitFullscreenEnabled?: boolean };
+    if (!document.fullscreenEnabled && !prefixed.webkitFullscreenEnabled) fullscreenBtn.hidden = true;
     fullscreenBtn.addEventListener('click', handlers.onFullscreen);
 
     for (const button of this.switchButtons) {

@@ -244,7 +244,7 @@ body {
   color: var(--ink);
   white-space: nowrap;
 }
-.error[hidden], .fallback[hidden] { display: none; }
+.error[hidden], .fallback[hidden], .icon-btn[hidden] { display: none; }
 
 :focus-visible { outline: 1px solid var(--accent); outline-offset: 3px; }
 

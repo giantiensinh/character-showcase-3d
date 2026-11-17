@@ -1,10 +1,12 @@
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { GLTFLoader, type GLTF } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import type { CharacterDef } from './config';
 
 const loader = new GLTFLoader();
 loader.setMeshoptDecoder(MeshoptDecoder);
+
+const LOAD_TIMEOUT_MS = 45_000;
 
 export type LoadOptions = {
   anisotropy: number;
@@ -15,8 +17,30 @@ export async function loadCharacter(
   def: CharacterDef,
   options: LoadOptions,
 ): Promise<{ group: THREE.Group; box: THREE.Box3 }> {
-  const gltf = await loader.loadAsync(def.file, (event) => {
-    if (event.total > 0) options.onProgress?.(Math.min(event.loaded / event.total, 1));
+  let timedOut = false;
+  const gltf = await new Promise<GLTF>((resolve, reject) => {
+    const timer = setTimeout(() => {
+      timedOut = true;
+      reject(new Error('Model load timed out'));
+    }, LOAD_TIMEOUT_MS);
+    loader.load(
+      def.file,
+      (result) => {
+        clearTimeout(timer);
+        if (timedOut) {
+          disposeCharacter(result.scene);
+          return;
+        }
+        resolve(result);
+      },
+      (event) => {
+        if (event.total > 0) options.onProgress?.(Math.min(event.loaded / event.total, 1));
+      },
+      (error) => {
+        clearTimeout(timer);
+        reject(error);
+      },
+    );
   });
 
   const group = gltf.scene;

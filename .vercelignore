@@ -1,0 +1,7 @@
+/*.glb
+/docs
+/qa
+/node_modules
+/.vercel
+/.superpowers
+/.git

@@ -162,7 +162,7 @@ export class ShowcaseScene {
     const target = new THREE.Vector3(0, size.y * 0.55, 0);
     const vFov = THREE.MathUtils.degToRad(this.camera.fov);
     const hFov = 2 * Math.atan(Math.tan(vFov / 2) * this.camera.aspect);
-    const padding = this.isMobile ? Math.max(def.cameraPadding, 1.9) : def.cameraPadding;
+    const padding = this.isMobile ? Math.max(def.cameraPadding, 1.68) : def.cameraPadding;
     const distV = size.y / 2 / Math.tan(vFov / 2);
     const distH = Math.max(size.x, size.z) / 2 / Math.tan(hFov / 2);
     this.fitDistance = Math.max(distV, distH) * padding;

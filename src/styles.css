@@ -255,11 +255,16 @@ body {
   .wordmark { font-size: 9px; }
   .identity {
     left: 18px;
-    bottom: calc(env(safe-area-inset-bottom, 0px) + 96px);
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 84px);
     max-width: calc(100vw - 36px);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    column-gap: 10px;
   }
+  .identity-index { margin: 0; }
   .identity h1 { font-size: 28px; }
-  .identity-sub { margin-top: 8px; }
+  .identity-sub { display: none; }
   .switcher {
     left: 18px;
     right: 18px;

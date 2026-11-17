@@ -52,7 +52,7 @@ export class ShowcaseScene {
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.08;
     this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.shadowMap.type = THREE.PCFShadowMap;
 
     this.camera = new THREE.PerspectiveCamera(35, 1, 0.1, 100);
     this.camera.position.set(0, 1.5, 4);
@@ -71,7 +71,7 @@ export class ShowcaseScene {
     this.scene.environmentIntensity = 0.35;
     pmrem.dispose();
 
-    this.keyLight = new THREE.DirectionalLight('#fff1e0', 2.2);
+    this.keyLight = new THREE.DirectionalLight('#fff1e0', 1.9);
     this.keyLight.position.set(2.6, 3.8, 2.8);
     this.keyLight.castShadow = true;
     const shadowSize = this.isMobile ? 1024 : 2048;
@@ -84,7 +84,7 @@ export class ShowcaseScene {
     const fill = new THREE.DirectionalLight('#9fb6d6', 0.55);
     fill.position.set(-3.2, 2.2, 1.8);
 
-    const rim = new THREE.SpotLight('#fff7ec', 90, 12, 0.55, 0.7, 2);
+    const rim = new THREE.SpotLight('#fff7ec', 130, 12, 0.55, 0.7, 2);
     rim.position.set(-0.6, 3.4, -3.6);
     rim.target.position.set(0, 1, 0);
 
@@ -159,7 +159,7 @@ export class ShowcaseScene {
 
   private fitCamera(box: THREE.Box3, def: CharacterDef): void {
     const size = box.getSize(new THREE.Vector3());
-    const target = new THREE.Vector3(0, size.y * 0.52, 0);
+    const target = new THREE.Vector3(0, size.y * 0.55, 0);
     const vFov = THREE.MathUtils.degToRad(this.camera.fov);
     const hFov = 2 * Math.atan(Math.tan(vFov / 2) * this.camera.aspect);
     const padding = this.isMobile ? Math.max(def.cameraPadding, 1.9) : def.cameraPadding;
@@ -174,8 +174,8 @@ export class ShowcaseScene {
 
   private applyDefaultView(): void {
     const distance = this.fitDistance;
-    const polar = 1.36;
-    const azimuth = 0.18;
+    const polar = 1.38;
+    const azimuth = 1.75;
     const offset = new THREE.Vector3(
       Math.sin(polar) * Math.sin(azimuth),
       Math.cos(polar),
@@ -212,7 +212,7 @@ export class ShowcaseScene {
 
     const shadowPlane = new THREE.Mesh(
       new THREE.CircleGeometry(radius * 0.999, 64),
-      new THREE.ShadowMaterial({ color: 0x000000, opacity: 0.38 }),
+      new THREE.ShadowMaterial({ color: 0x000000, opacity: 0.32 }),
     );
     shadowPlane.rotation.x = -Math.PI / 2;
     shadowPlane.position.y = 0.001;
@@ -225,7 +225,7 @@ export class ShowcaseScene {
         map: createBlobTexture(),
         transparent: true,
         depthWrite: false,
-        opacity: 0.55,
+        opacity: 0.48,
         toneMapped: false,
       }),
     );
